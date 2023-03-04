@@ -8,6 +8,13 @@
 import pyrealsense2 as rs
 import numpy as np
 import cv2
+import os
+from datetime import datetime
+
+vol = int(input("Input liquid volume in ml: "))
+vessel_name = str(input("Input vessel name: "))
+
+today = datetime.now()
 
 # Configure depth and color streams
 pipeline = rs.pipeline()
@@ -60,17 +67,26 @@ try:
 
         # If depth and color resolutions are different, resize color image to match depth image for display
         if depth_colormap_dim != color_colormap_dim:
-            resized_color_image = cv2.resize(color_image, dsize=(depth_colormap_dim[1], depth_colormap_dim[0]), interpolation=cv2.INTER_AREA)
-            images = np.hstack((resized_color_image, depth_colormap))
-        else:
+            color_image = cv2.resize(color_image, dsize=(depth_colormap_dim[1], depth_colormap_dim[0]), interpolation=cv2.INTER_AREA)
             images = np.hstack((color_image, depth_colormap))
-
-        # Show images
+        else:
+            
+            images = np.hstack((color_image, depth_colormap))
+        path = "Captured_images/" + vessel_name +"_" + str(vol) + "ml" + "_" + today.strftime('%Y%m%d_%H%M%S')
+        os.mkdir(path)
+        # save and show images
+        cv2.imwrite(path + "/Image.png", color_image)
+        cv2.imwrite(path + "/DepthMap.png", depth_colormap)
+        with open(path + "/vol.txt", 'w') as f:
+            f.write(str(vol))
+        with open(path + "/vessel.txt", 'w') as f:
+            f.write(vessel_name)
         cv2.namedWindow('RealSense', cv2.WINDOW_AUTOSIZE)
         cv2.imshow('RealSense', images)
-        cv2.waitKey(1)
+        cv2.waitKey(5)
+        break
 
 finally:
-
+    print("Successfully done!")
     # Stop streaming
     pipeline.stop()
